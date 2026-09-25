@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>周公子 | 会员身体功能全面评估系统</title>
+  
+  <!-- 核心导出依赖库 CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #3b82f6;
+      --primary-bg: #eff6ff;
+      --accent: #0284c7;
+      --bg-body: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --danger: #ef4444;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      padding-bottom: calc(90px + var(--safe-bottom));
+      line-height: 1.5;
+    }
+
+    /* 顶部导航固定 */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .brand h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1.2;
+    }
+
+    .brand .author-tag {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .save-status {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 20px;
+      background: #f1f5f9;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .save-status.saved {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .save-status.saving {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .btn-icon {
+      background: var(--primary-bg);
+      color: var(--primary);
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 650px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+      border-left: 4px solid var(--primary-light);
+      padding-left: 8px;
+      margin-bottom: 14px;
+    }
+
+    .section-subtitle {
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+      margin: 12px 0 6px 0;
+      padding-bottom: 4px;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 9px 11px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fafafa;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary-light);
+      background: #fff;
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 50px;
+    }
+
+    /* 移动端 Chips/胶囊卡片单选与多选 */
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .chip {
+      position: relative;
+    }
+
+    .chip input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .chip-label {
+      display: inline-block;
+      padding: 6px 11px;
+      font-size: 12px;
+      border-radius: 18px;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+
+    .chip input:checked + .chip-label {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(30,58,138,0.2);
+    }
+
+    /* 固定底部操作栏 */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      padding: 10px 16px calc(10px + var(--safe-bottom));
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-secondary { background: var(--primary-bg); color: var(--primary); border: 1px solid rgba(59,130,246,0.3); }
+    .btn-outline { background: #fff; color: #334155; border: 1px solid var(--border); }
+
+    /* 档案库抽屉与弹窗 */
+    .drawer-overlay, .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none;
+    }
+    .drawer-overlay.active, .modal-overlay.active { display: flex; }
+
+    .drawer {
+      position: fixed; top: 0; right: -100%; width: 85%; max-width: 380px; height: 100%;
+      background: #fff; z-index: 101; transition: right 0.3s ease; display: flex; flex-direction: column;
+    }
+    .drawer.active { right: 0; }
+    .drawer-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 12px; }
+    .drawer-footer { padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+
+    .member-item {
+      background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer;
+    }
+
+    .modal {
+      background: #fff; border-radius: 16px; width: 90%; max-width: 400px; padding: 20px; margin: auto;
+    }
+    .export-option {
+      padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; cursor: pointer;
+    }
+
+    .footer-copyright {
+      text-align: center; font-size: 11px; color: #94a3b8; padding: 20px 0 10px 0;
+    }
+
+    #importInput { display: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <h1>身体功能全面评估系统</h1>
+      <span class="author-tag">开发者：周公子 | 独立版权</span>
+    </div>
+    <div class="header-actions">
+      <div id="saveStatus" class="save-status saved">
+        <span>●</span> <span id="saveStatusText">已自动保存</span>
+      </div>
+      <button class="btn-icon" onclick="toggleDrawer(true)">📁 档案库</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <form id="assessmentForm">
+
+      <!-- 一、基础信息 -->
+      <div class="card">
+        <div class="card-title">一、基础信息</div>
+        <div class="grid-2">
+          <div class="form-group"><label>姓名 *</label><input type="text" name="name" class="form-control" required placeholder="会员姓名"></div>
+          <div class="form-group"><label>性别</label>
+            <div class="chip-group">
+              <label class="chip"><input type="radio" name="gender" value="男"><span class="chip-label">男</span></label>
+              <label class="chip"><input type="radio" name="gender" value="女" checked><span class="chip-label">女</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label>年龄</label><input type="number" name="age" class="form-control" placeholder="岁"></div>
+          <div class="form-group"><label>日期</label><input type="date" id="date" name="date" class="form-control"></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label>教练</label><input type="text" name="coach" class="form-control" value="周公子"></div>
+          <div class="form-group"><label>联系方式</label><input type="tel" name="phone" class="form-control" placeholder="手机号"></div>
+        </div>
+        <div class="grid-3">
+          <div class="form-group"><label>身高(cm)</label><input type="number" id="height" name="height" class="form-control" oninput="calcBMI()"></div>
+          <div class="form-group"><label>体重(kg)</label><input type="number" id="weight" name="weight" class="form-control" oninput="calcBMI()"></div>
+          <div class="form-group"><label>BMI</label><input type="text" id="bmi" name="bmi" class="form-control" readonly></div>
+        </div>
+        <div class="grid-3">
+          <div class="form-group"><label>体脂率(%)</label><input type="number" name="bodyFat" class="form-control"></div>
+          <div class="form-group"><label>骨骼肌</label><input type="number" name="muscle" class="form-control"></div>
+          <div class="form-group"><label>基础代谢</label><input type="number" name="bmr" class="form-control"></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label>职业</label><input type="text" name="job" class="form-control"></div>
+          <div class="form-group"><label>每日久坐时间</label><input type="text" name="sitTime" class="form-control" placeholder="小时"></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label>平均睡眠</label><input type="text" name="sleep" class="form-control" placeholder="小时"></div>
+          <div class="form-group"><label>运动频率</label><input type="text" name="freq" class="form-control"></div>
+        </div>
+        <div class="form-group"><label>主要运动项目</label><input type="text" name="sports" class="form-control"></div>
+
+        <div class="form-group">
+          <label>训练目标（多选）</label>
+          <div class="chip-group">
+            <label class="chip"><input type="checkbox" name="goals" value="减脂"><span class="chip-label">减脂</span></label>
+            <label class="chip"><input type="checkbox" name="goals" value="增肌"><span class="chip-label">增肌</span></label>
+            <label class="chip"><input type="checkbox" name="goals" value="塑形"><span class="chip-label">塑形</span></label>
+            <label class="chip"><input type="checkbox" name="goals" value="力量"><span class="chip-label">力量</span></label>
+            <label class="chip"><input type="checkbox" name="goals" value="体能"><span class="chip-label">体能</span></label>
+            <label class="chip"><input type="checkbox" name="goals" value="体态改善"><span class="chip-label">体态改善</span></label>
+            <label class="chip"><input type="checkbox" name="goals" value="肩颈改善"><span class="chip-label">肩颈改善</span></label>
+            <label class="chip"><input type="checkbox" name="goals" value="腰背改善"><span class="chip-label">腰背改善</span></label>
+            <label class="chip"><input type="checkbox" name="goals" value="下肢功能"><span class="chip-label">下肢功能</span></label>
+            <label class="chip"><input type="checkbox" name="goals" value="运动表现"><span class="chip-label">运动表现</span></label>
+          </div>
+        </div>
+        <div class="form-group"><label>会员主诉</label><textarea name="mainComplaint" class="form-control"></textarea></div>
+        <div class="form-group">
+          <label>会员最希望改变的 3 件事</label>
+          <input type="text" name="hope1" class="form-control" placeholder="1." style="margin-bottom:4px;">
+          <input type="text" name="hope2" class="form-control" placeholder="2." style="margin-bottom:4px;">
+          <input type="text" name="hope3" class="form-control" placeholder="3.">
+        </div>
+      </div>
+
+      <!-- 二、外观与体态观察 -->
+      <div class="card">
+        <div class="card-title">二、外观与体态观察</div>
+        <div class="form-group"><label>体型</label>
+          <div class="chip-group">
+            <label class="chip"><input type="radio" name="bodyType" value="偏瘦"><span class="chip-label">偏瘦</span></label>
+            <label class="chip"><input type="radio" name="bodyType" value="正常" checked><span class="chip-label">正常</span></label>
+            <label class="chip"><input type="radio" name="bodyType" value="偏胖"><span class="chip-label">偏胖</span></label>
+            <label class="chip"><input type="radio" name="bodyType" value="肌肉量较高"><span class="chip-label">肌肉量较高</span></label>
+          </div>
+        </div>
+        <div class="form-group"><label>身体左右对称性</label>
+          <div class="chip-group">
+            <label class="chip"><input type="radio" name="symmetry" value="基本对称" checked><span class="chip-label">基本对称</span></label>
+            <label class="chip"><input type="radio" name="symmetry" value="轻度差异"><span class="chip-label">轻度差异</span></label>
+            <label class="chip"><input type="radio" name="symmetry" value="明显差异"><span class="chip-label">明显差异</span></label>
+          </div>
+        </div>
+        <div class="form-group"><label>站立状态</label>
+          <div class="chip-group">
+            <label class="chip"><input type="radio" name="standing" value="放松自然" checked><span class="chip-label">放松自然</span></label>
+            <label class="chip"><input type="radio" name="standing" value="紧张"><span class="chip-label">紧张</span></label>
+            <label class="chip"><input type="radio" name="standing" value="重心偏移"><span class="chip-label">重心偏移</span></label>
+            <label class="chip"><input type="radio" name="standing" value="明显代偿"><span class="chip-label">明显代偿</span></label>
+          </div>
+        </div>
+        <div class="form-group"><label>呼吸状态</label>
+          <div class="chip-group">
+            <label class="chip"><input type="radio" name="breathing" value="腹式为主"><span class="chip-label">腹式为主</span></label>
+            <label class="chip"><input type="radio" name="breathing" value="胸式为主"><span class="chip-label">胸式为主</span></label>
+            <label class="chip"><input type="radio" name="breathing" value="混合" checked><span class="chip-label">混合</span></label>
+            <label class="chip"><input type="radio" name="breathing" value="呼吸浅"><span class="chip-label">呼吸浅</span></label>
+            <label class="chip"><input type="radio" name="breathing" value="呼吸节律异常"><span class="chip-label">节律异常</span></label>
+          </div>
+        </div>
+        <div class="form-group"><label>体态/形象表现记录</label><textarea name="postureNote" class="form-control"></textarea></div>
+      </div>
+
+      <!-- 三、脊柱评估 -->
+      <div class="card">
+        <div class="card-title">三、脊柱评估</div>
+        <div class="section-subtitle">【正面】</div>
+        <div class="grid-2">
+          <div class="form-group"><label>头部位置</label><input type="text" name="headFront" class="form-control" placeholder="居中/左偏/右偏"></div>
+          <div class="form-group"><label>肩线</label><input type="text" name="shoulderLine" class="form-control" placeholder="水平/左高右低/右高左低"></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label>骨盆水平</label><input type="text" name="pelvisFront" class="form-control" placeholder="基本水平/左右偏"></div>
+          <div class="form-group"><label>膝关节排列</label><input type="text" name="kneeFront" class="form-control" placeholder="对称/差异"></div>
+        </div>
+
+        <div class="section-subtitle">【侧面】</div>
+        <div class="grid-2">
+          <div class="form-group"><label>头前伸</label><input type="text" name="headForward" class="form-control" placeholder="无/轻度/明显"></div>
+          <div class="form-group"><label>胸椎</label><input type="text" name="thoracicSide" class="form-control" placeholder="自然/后凸/挺胸"></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label>腰椎</label><input type="text" name="lumbarSide" class="form-control" placeholder="自然/曲度偏大/偏小"></div>
+          <div class="form-group"><label>骨盆</label><input type="text" name="pelvisSide" class="form-control" placeholder="中立/前倾/后倾/旋转"></div>
+        </div>
+
+        <div class="section-subtitle">【背面】</div>
+        <div class="form-group"><label>脊柱左右偏移</label><input type="text" name="spineBack" class="form-control" placeholder="无明显/左偏/右偏"></div>
+        <div class="form-group"><label>肩胛骨表现</label><input type="text" name="scapulaBack" class="form-control" placeholder="翼状/外展/上提/下压/前倾"></div>
+        <div class="form-group"><label>脊柱备注</label><textarea name="spineNote" class="form-control"></textarea></div>
+      </div>
+
+      <!-- 四、骨盆与髋关节 -->
+      <div class="card">
+        <div class="card-title">四、骨盆与髋关节</div>
+        <div class="grid-3">
+          <div class="form-group"><label>骨盆水平</label><input type="text" name="pelvisLvl" class="form-control"></div>
+          <div class="form-group"><label>骨盆旋转</label><input type="text" name="pelvisRot" class="form-control"></div>
+          <div class="form-group"><label>前后倾</label><input type="text" name="pelvisTilt" class="form-control"></div>
+        </div>
+        <div class="section-subtitle">髋关节活动度 (°)</div>
+        <div class="grid-2"><div class="form-group"><label>屈髋 (左/右)</label><input type="text" name="hipFlex" class="form-control" placeholder="左° / 右°"></div><div class="form-group"><label>伸髋 (左/右)</label><input type="text" name="hipExt" class="form-control" placeholder="左° / 右°"></div></div>
+        <div class="grid-2"><div class="form-group"><label>髋外展 (左/右)</label><input type="text" name="hipAbd" class="form-control" placeholder="左° / 右°"></div><div class="form-group"><label>髋内收 (左/右)</label><input type="text" name="hipAdd" class="form-control" placeholder="左° / 右°"></div></div>
+        <div class="grid-2"><div class="form-group"><label>髋内旋 (左/右)</label><input type="text" name="hipIR" class="form-control" placeholder="左° / 右°"></div><div class="form-group"><label>髋外旋 (左/右)</label><input type="text" name="hipER" class="form-control" placeholder="左° / 右°"></div></div>
+        <div class="form-group"><label>单腿站立骨盆表现</label><input type="text" name="singleLegPelvis" class="form-control"></div>
+      </div>
+
+      <!-- 五、腿型与下肢排列 -->
+      <div class="card">
+        <div class="card-title">五、腿型与下肢排列</div>
+        <div class="grid-2">
+          <div class="form-group"><label>左腿排列</label><input type="text" name="legLeft" class="form-control" placeholder="正常/膝内扣/膝外翻"></div>
+          <div class="form-group"><label>右腿排列</label><input type="text" name="legRight" class="form-control" placeholder="正常/膝内扣/膝外翻"></div>
+        </div>
+        <div class="form-group"><label>深蹲观察</label><input type="text" name="squatObs" class="form-control" placeholder="对称/左右偏移/膝内扣/足跟代偿/躯干前倾"></div>
+        <div class="form-group"><label>单腿蹲 (左/右)</label><textarea name="singleSquatObs" class="form-control" placeholder="记录左右侧表现..."></textarea></div>
+      </div>
+
+      <!-- 六、足弓与足部功能 -->
+      <div class="card">
+        <div class="card-title">六、足弓与足部功能</div>
+        <div class="grid-2">
+          <div class="form-group"><label>左足弓</label><input type="text" name="archLeft" class="form-control" placeholder="正常/偏低/塌陷/高足弓"></div>
+          <div class="form-group"><label>右足弓</label><input type="text" name="archRight" class="form-control" placeholder="正常/偏低/塌陷/高足弓"></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label>单脚站立(秒 左/右)</label><input type="text" name="singleStandTime" class="form-control" placeholder="左s / 右s"></div>
+          <div class="form-group"><label>闭眼单脚站(秒 左/右)</label><input type="text" name="closeEyeTime" class="form-control" placeholder="左s / 右s"></div>
+        </div>
+        <div class="form-group"><label>提踵测试与动作质量</label><input type="text" name="calfRaise" class="form-control" placeholder="次数及质量表现"></div>
+      </div>
+
+      <!-- 七、肩胛—肩关节 -->
+      <div class="card">
+        <div class="card-title">七、肩胛与肩关节</div>
+        <div class="grid-2"><div class="form-group"><label>前屈 (左/右 °)</label><input type="text" name="shoulderFlex" class="form-control"></div><div class="form-group"><label>外展 (左/右 °)</label><input type="text" name="shoulderAbd" class="form-control"></div></div>
+        <div class="grid-2"><div class="form-group"><label>内旋 (左/右)</label><input type="text" name="shoulderIR" class="form-control"></div><div class="form-group"><label>外旋 (左/右)</label><input type="text" name="shoulderER" class="form-control"></div></div>
+        <div class="form-group"><label>双手上举代偿</label><input type="text" name="raiseComp" class="form-control" placeholder="对称/受限/肩胛代偿/腰椎代偿"></div>
+        <div class="form-group"><label>肩胛动态表现</label><textarea name="scapulaDynamic" class="form-control"></textarea></div>
+      </div>
+
+      <!-- 八、颈椎与头部 -->
+      <div class="card">
+        <div class="card-title">八、颈椎与头部</div>
+        <div class="grid-2"><div class="form-group"><label>颈旋转(左/右 °)</label><input type="text" name="neckRot" class="form-control"></div><div class="form-group"><label>颈侧屈(左/右 °)</label><input type="text" name="neckSideFlex" class="form-control"></div></div>
+        <div class="form-group"><label>日常症状</label><input type="text" name="neckSymptom" class="form-control" placeholder="肩颈紧张/头晕/活动受限/无"></div>
+      </div>
+
+      <!-- 九、核心与躯干功能 -->
+      <div class="card">
+        <div class="card-title">九、核心与躯干功能</div>
+        <div class="grid-2"><div class="form-group"><label>死虫测试(左/右)</label><input type="text" name="deadbug" class="form-control" placeholder="稳定/不稳定"></div><div class="form-group"><label>鸟狗测试(左/右)</label><input type="text" name="birddog" class="form-control" placeholder="稳定/不稳定"></div></div>
+        <div class="grid-2"><div class="form-group"><label>平板支撑(秒)</label><input type="text" name="plankTime" class="form-control"></div><div class="form-group"><label>侧桥(左/右 秒)</label><input type="text" name="sidePlankTime" class="form-control"></div></div>
+        <div class="form-group"><label>躯干控制问题</label><textarea name="coreProblem" class="form-control"></textarea></div>
+      </div>
+
+      <!-- 十、基础动作模式 -->
+      <div class="card">
+        <div class="card-title">十、基础动作模式评估</div>
+        <div class="form-group"><label>1. 深蹲表现</label><input type="text" name="patternSquat" class="form-control"></div>
+        <div class="form-group"><label>2. 髋铰链表现</label><input type="text" name="patternHinge" class="form-control"></div>
+        <div class="form-group"><label>3. 弓步表现 (左/右)</label><input type="text" name="patternLunge" class="form-control"></div>
+        <div class="form-group"><label>4. 推/拉动作</label><input type="text" name="patternPushPull" class="form-control"></div>
+        <div class="form-group"><label>5. 旋转与行走步态</label><input type="text" name="patternGait" class="form-control"></div>
+      </div>
+
+      <!-- 十一、力量与体能基础 -->
+      <div class="card">
+        <div class="card-title">十一、力量与体能基础</div>
+        <div class="grid-3">
+          <div class="form-group"><label>俯卧撑(次)</label><input type="number" name="pushups" class="form-control"></div>
+          <div class="form-group"><label>标准深蹲(次)</label><input type="number" name="squatCount" class="form-control"></div>
+          <div class="form-group"><label>引体向上(次)</label><input type="number" name="pullups" class="form-control"></div>
+        </div>
+        <div class="form-group"><label>心肺有氧表现</label><input type="text" name="cardio" class="form-control" placeholder="弱/一般/良好/优秀"></div>
+      </div>
+
+      <!-- 十二、柔韧性与活动度 -->
+      <div class="card">
+        <div class="card-title">十二、柔韧性与活动度</div>
+        <div class="grid-2"><div class="form-group"><label>踝背屈 (左/右)</label><input type="text" name="ankleFlex" class="form-control"></div><div class="form-group"><label>胸椎旋转 (左/右)</label><input type="text" name="thoracicRot" class="form-control"></div></div>
+        <div class="grid-2"><div class="form-group"><label>腘绳肌 (左/右)</label><input type="text" name="hamstring" class="form-control"></div><div class="form-group"><label>髋屈肌 (左/右)</label><input type="text" name="hipFlexor" class="form-control"></div></div>
+      </div>
+
+      <!-- 十三、肌肉与软组织观察 -->
+      <div class="card">
+        <div class="card-title">十三、肌肉/软组织观察</div>
+        <div class="form-group"><label>高张力区域 (1-5)</label><input type="text" name="highTension" class="form-control" placeholder="例：斜方肌/胸小肌/髂腰肌"></div>
+        <div class="form-group"><label>触诊反馈与左右张力差异</label><textarea name="palpation" class="form-control"></textarea></div>
+      </div>
+
+      <!-- 十四、功能测试与干预复测 (重磅增加) -->
+      <div class="card" style="border: 2px solid var(--primary-light);">
+        <div class="card-title" style="color: var(--primary-light);">十四、即刻功能测试与干预复测</div>
+        <div class="form-group"><label>会员最主要问题动作</label><input type="text" name="testAction" class="form-control" placeholder="例如：深蹲受限 / 举手肩痛"></div>
+        <div class="form-group"><label>第一次测试表现</label><textarea name="testFirst" class="form-control" placeholder="记录初始限制或代偿..."></textarea></div>
+        <div class="form-group"><label>现场松解/激活干预手段</label><textarea name="testIntervention" class="form-control" placeholder="例如：筋膜刀松解胸小肌 + 激活抑制肌群"></textarea></div>
+        <div class="form-group"><label>复测动作变化结果</label><textarea name="testRetest" class="form-control" placeholder="角度增加 / 疼痛消失 / 稳定性提升"></textarea></div>
+        <div class="form-group"><label>会员主观感受反馈</label><input type="text" name="testFeedback" class="form-control" placeholder="会员口述体验..."></div>
+      </div>
+
+      <!-- 十五、综合判断 -->
+      <div class="card">
+        <div class="card-title">十五、综合判断</div>
+        <div class="form-group"><label>主要限制因素 (1-3)</label>
+          <input type="text" name="limit1" class="form-control" placeholder="1." style="margin-bottom:4px;">
+          <input type="text" name="limit2" class="form-control" placeholder="2." style="margin-bottom:4px;">
+          <input type="text" name="limit3" class="form-control" placeholder="3.">
+        </div>
+        <div class="form-group"><label>优先处理顺序</label>
+          <input type="text" name="prio1" class="form-control" placeholder="第一优先：" style="margin-bottom:4px;">
+          <input type="text" name="prio2" class="form-control" placeholder="第二优先：">
+        </div>
+      </div>
+
+      <!-- 十六、阶段目标与最终判断 (重磅增加) -->
+      <div class="card">
+        <div class="card-title">十六、阶段目标与教练决定</div>
+        <div class="form-group"><label>短期目标 (2–4周)</label><input type="text" name="goalShort" class="form-control"></div>
+        <div class="form-group"><label>中期目标 (8–12周)</label><input type="text" name="goalMid" class="form-control"></div>
+        <div class="form-group"><label>长期目标 (3–6个月)</label><input type="text" name="goalLong" class="form-control"></div>
+        
+        <div class="section-subtitle">【教练最终决策】</div>
+        <div class="form-group"><label>当前最重要的不是：</label><input type="text" name="notImportant" class="form-control" placeholder="例如：不是盲目上重量"></div>
+        <div class="form-group"><label>而是：</label><input type="text" name="isImportant" class="form-control" placeholder="例如：建立正确的骨盆中立与呼吸"></div>
+        <div class="form-group"><label>核心训练方向：</label><textarea name="coreDirection" class="form-control"></textarea></div>
+        <div class="grid-2">
+          <div class="form-group"><label>复测指标</label><input type="text" name="retestIndex" class="form-control"></div>
+          <div class="form-group"><label>下一次复测日期</label><input type="date" name="nextRetestDate" class="form-control"></div>
+        </div>
+      </div>
+
+    </form>
+
+    <div class="footer-copyright">
+      © 周公子 (Zhou Gongzi) 版权所有 | 身体功能评估系统 V2.0
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn btn-outline" onclick="resetForm()">新建档案</button>
+    <button class="btn btn-secondary" onclick="manualSave()">保存草稿</button>
+    <button class="btn btn-primary" onclick="openExportModal()">导出档案</button>
+  </div>
+
+  <!-- 抽屉与弹窗 -->
+  <div id="drawerOverlay" class="drawer-overlay" onclick="toggleDrawer(false)"></div>
+  <div id="drawer" class="drawer">
+    <div class="drawer-header">
+      <h3>会员档案库</h3>
+      <button class="btn-icon" onclick="toggleDrawer(false)">✕</button>
+    </div>
+    <div style="padding: 10px 12px; border-bottom: 1px solid var(--border);">
+      <input type="text" id="searchInput" class="form-control" placeholder="🔍 搜索姓名或手机..." oninput="renderMemberList()">
+    </div>
+    <div id="drawerBody" class="drawer-body"></div>
+    <div class="drawer-footer">
+      <button class="btn btn-outline" style="font-size:12px;" onclick="exportAllDataBackup()">📦 导出备份</button>
+      <button class="btn btn-outline" style="font-size:12px;" onclick="triggerImport()">📥 恢复备份</button>
+      <input type="file" id="importInput" accept=".json" onchange="importDataBackup(event)">
+    </div>
+  </div>
+
+  <div id="exportModal" class="modal-overlay">
+    <div class="modal">
+      <div style="font-weight:700; margin-bottom:12px;">导出格式选择</div>
+      <div class="export-option" onclick="exportPDF()">
+        <div style="font-weight:700; color:var(--primary);">📄 PDF 评估报告 (主推)</div>
+        <div style="font-size:11px; color:var(--text-muted);">含全量16项数据与周公子落款</div>
+      </div>
+      <div class="export-option" onclick="exportExcel()">
+        <div style="font-weight:700; color:#15803d;">📊 Excel 工作表 (.xlsx)</div>
+        <div style="font-size:11px; color:var(--text-muted);">用于建档与数据整理</div>
+      </div>
+      <div style="margin-top:12px; text-align:right;">
+        <button class="btn btn-outline" style="padding:6px 16px; font-size:12px;" onclick="closeExportModal()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DB_KEY = 'zhougongzi_fitness_members_v2';
+    const CURRENT_DRAFT_KEY = 'zhougongzi_fitness_current_draft';
+    let autoSaveTimer = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('date').valueAsDate = new Date();
+      loadCurrentDraft();
+      document.getElementById('assessmentForm').addEventListener('input', triggerAutoSave);
+      document.getElementById('assessmentForm').addEventListener('change', triggerAutoSave);
+    });
+
+    function calcBMI() {
+      const h = parseFloat(document.getElementById('height').value) / 100;
+      const w = parseFloat(document.getElementById('weight').value);
+      document.getElementById('bmi').value = (h > 0 && w > 0) ? (w / (h * h)).toFixed(1) : '';
+    }
+
+    function getFormData() {
+      const form = document.getElementById('assessmentForm');
+      const formData = new FormData(form);
+      const data = {};
+      for (let [key, val] of formData.entries()) {
+        if (data[key]) {
+          if (!Array.isArray(data[key])) data[key] = [data[key]];
+          data[key].push(val);
+        } else { data[key] = val; }
+      }
+      data.updatedAt = new Date().toISOString();
+      data.id = data.phone || data.name || 'draft_' + Date.now();
+      return data;
+    }
+
+    function setFormData(data) {
+      if (!data) return;
+      const form = document.getElementById('assessmentForm');
+      form.reset();
+      Object.keys(data).forEach(key => {
+        const val = data[key];
+        const elements = form.querySelectorAll(`[name="${key}"]`);
+        if (elements.length > 0) {
+          if (elements[0].type === 'radio') {
+            elements.forEach(el => { if (el.value === val) el.checked = true; });
+          } else if (elements[0].type === 'checkbox') {
+            const vals = Array.isArray(val) ? val : [val];
+            elements.forEach(el => { if (vals.includes(el.value)) el.checked = true; });
+          } else { elements[0].value = val; }
+        }
+      });
+    }
+
+    function triggerAutoSave() {
+      updateSaveStatus('saving', '保存中...');
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(saveCurrentDraft, 1000);
+    }
+
+    function saveCurrentDraft() {
+      const data = getFormData();
+      localStorage.setItem(CURRENT_DRAFT_KEY, JSON.stringify(data));
+      if (data.name && data.name.trim() !== '') saveToMemberStore(data);
+      updateSaveStatus('saved', '已自动保存');
+    }
+
+    function saveToMemberStore(data) {
+      let members = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+      const index = members.findIndex(m => m.id === data.id || (m.name === data.name && m.phone === data.phone));
+      if (index >= 0) members[index] = data;
+      else members.unshift(data);
+      localStorage.setItem(DB_KEY, JSON.stringify(members));
+    }
+
+    function loadCurrentDraft() {
+      const draft = localStorage.getItem(CURRENT_DRAFT_KEY);
+      if (draft) { try { setFormData(JSON.parse(draft)); } catch (e) {} }
+    }
+
+    function manualSave() {
+      const data = getFormData();
+      if (!data.name) { alert("请填写姓名！"); return; }
+      saveToMemberStore(data);
+      saveCurrentDraft();
+      alert("✅ 会员【" + data.name + "】档案已安全保存！");
+    }
+
+    function resetForm() {
+      if (confirm("确定新建评估吗？当前草稿已被保护。")) {
+        document.getElementById('assessmentForm').reset();
+        document.getElementById('date').valueAsDate = new Date();
+        localStorage.removeItem(CURRENT_DRAFT_KEY);
+        updateSaveStatus('saved', '已新建空白档案');
+      }
+    }
+
+    function updateSaveStatus(type, text) {
+      document.getElementById('saveStatus').className = 'save-status ' + type;
+      document.getElementById('saveStatusText').innerText = text;
+    }
+
+    function toggleDrawer(open) {
+      if (open) renderMemberList();
+      document.getElementById('drawer').classList.toggle('active', open);
+      document.getElementById('drawerOverlay').classList.toggle('active', open);
+    }
+
+    function renderMemberList() {
+      const members = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const body = document.getElementById('drawerBody');
+      const filtered = members.filter(m => (m.name && m.name.toLowerCase().includes(search)) || (m.phone && m.phone.includes(search)));
+
+      if (filtered.length === 0) {
+        body.innerHTML = '<div style="text-align:center; padding:30px 0; color:#94a3b8; font-size:12px;">无历史档案</div>';
+        return;
+      }
+
+      body.innerHTML = filtered.map(m => `
+        <div class="member-item" onclick="loadMember('${m.id}')">
+          <div style="font-weight:700; font-size:13px;">${m.name || '未命名'} (${m.gender || '女'}) - ${m.phone || '无电话'}</div>
+          <div style="font-size:11px; color:#64748b; margin-top:2px;">日期：${m.date || '-'} | 目标：${Array.isArray(m.goals)?m.goals.join(','):(m.goals||'未设定')}</div>
+        </div>
+      `).join('');
+    }
+
+    function loadMember(id) {
+      const members = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+      const target = members.find(m => m.id === id);
+      if (target) {
+        setFormData(target);
+        localStorage.setItem(CURRENT_DRAFT_KEY, JSON.stringify(target));
+        toggleDrawer(false);
+      }
+    }
+
+    function exportAllDataBackup() {
+      const members = localStorage.getItem(DB_KEY) || '[]';
+      const blob = new Blob([members], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `周公子评估系统_全局数据备份_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    }
+
+    function triggerImport() { document.getElementById('importInput').click(); }
+
+    function importDataBackup(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const imported = JSON.parse(evt.target.result);
+          if (Array.isArray(imported)) {
+            localStorage.setItem(DB_KEY, JSON.stringify(imported));
+            alert(`✅ 成功导入恢复 ${imported.length} 条档案！`);
+            renderMemberList();
+          }
+        } catch (err) { alert("❌ 文件无法读取"); }
+      };
+      reader.readAsText(file);
+    }
+
+    function openExportModal() {
+      if (!getFormData().name) { alert("请填写姓名！"); return; }
+      document.getElementById('exportModal').classList.add('active');
+    }
+
+    function closeExportModal() { document.getElementById('exportModal').classList.remove('active'); }
+
+    function exportPDF() {
+      closeExportModal();
+      const data = getFormData();
+      const el = document.createElement('div');
+      el.style.padding = '15px';
+      el.innerHTML = `
+        <h2 style="text-align:center; color:#1e3a8a;">会员身体功能全面评估档案</h2>
+        <p style="text-align:center; font-size:10px; color:#64748b;">执教教练：${data.coach || '周公子'} | 日期：${data.date || ''}</p>
+        <hr style="margin:10px 0;">
+        <p><b>会员信息：</b>${data.name} (${data.gender}) - ${data.age || '-'}岁 | 身高：${data.height||'-'}cm 体重：${data.weight||'-'}kg (BMI: ${data.bmi||'-'})</p>
+        <p><b>训练目标：</b>${Array.isArray(data.goals)?data.goals.join(', '):data.goals}</p>
+        <p><b>会员主诉：</b>${data.mainComplaint || '无'}</p>
+        <h4 style="color:#1e3a8a; margin-top:10px;">十四、功能测试与干预复测</h4>
+        <p><b>测试动作：</b>${data.testAction || '无'}</p>
+        <p><b>干预手段：</b>${data.testIntervention || '无'}</p>
+        <p><b>复测变化：</b>${data.testRetest || '无'}</p>
+        <h4 style="color:#1e3a8a; margin-top:10px;">十六、阶段规划</h4>
+        <p><b>核心方向：</b>${data.coreDirection || '无'}</p>
+        <p><b>下一次复测日期：</b>${data.nextRetestDate || '待定'}</p>
+        <div style="margin-top:30px; text-align:center; font-size:10px; color:#94a3b8;">
+          本评估由 周公子 身体功能评估系统 生成 | 周公子 独立开发 & 版权所有
+        </div>
+      `;
+      html2pdf().set({ margin: 10, filename: `评估报告_${data.name}.pdf` }).from(el).save();
+    }
+
+    function exportExcel() {
+      closeExportModal();
+      const data = getFormData();
+      const rows = [["评估项", "结果"]];
+      Object.keys(data).forEach(k => rows.push([k, Array.isArray(data[k]) ? data[k].join(', ') : data[k]]));
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "评估档案");
+      XLSX.writeFile(wb, `评估档案_${data.name}.xlsx`);
+    }
+  </script>
+</body>
+</html>
